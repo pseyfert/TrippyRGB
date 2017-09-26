@@ -378,25 +378,16 @@ struct rgbElement {
   {     0,   500,   0, 255,   0 },
   {     0,   500, 255,   0,   0 },
   {   500,     0,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
   {   500,     0,   0, 255,   0 },
   {   500,     0, 255,   0, 255 },
   {   500,     0,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,  1000,   0, 255,   0 },
-  { 25500,     0, 255, 255,   0 },
-  { 25500, 25500,   0, 255, 255 },
-  {     0,  1000, 255,   0,   0 },
-  {     0,     0,   0,   0, 255 },
-  {     0, 25500, 255,   0, 255 },
-  {     0, 25500,   0, 255,   0 },
-  {     0, 25500,   2, 255,   0 },
-  { 25500, 25000,   3, 255,   0 },
-  {     0, 25500,   4, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
+  {  5500,  1000,   0, 255,   0 },
   {     0,     0,   0, 255,   0 },
   ///////////
 //  {   500,     0,   0,   0,   0 },
@@ -540,11 +531,11 @@ void delay_x_us(unsigned long int x) {
 //   Since the delay_x_us function delays 1.56x+2 microseconds,
 //     the total period is about 400 microseconds, which is 2500Hz (if we repeat it)
 //     (and that is way fast enough so that we don't perceive the Green LED flicker).
-void pulseGreen(unsigned char greenVal) {
+void pulseBlue(unsigned char blueVal) {
   PORTB &= 0b11111011;  // turn on Green LED at PB2 (pin 7) for 4 * Green value -- (by bringing this pin Low)
-  delay_x_us( greenVal );
+  delay_x_us( blueVal );
   PORTB |= 0b00000100;  // turn off Green LED at PB2 for 4 * (255 - Green value) -- (by bringing this pin High)
-  delay_x_us( (255 - greenVal) );
+  delay_x_us( (255 - blueVal) );
 }
 
 
@@ -696,9 +687,9 @@ void sendrgbElement( int index ) {
 
   // if FadeTime = 0, then just set the LEDs blinking at the RGB values (the fade loop will not be executed)
   if (FadeTime == 0) {
-    greenTemp = Green; // no need to manually pulse Green LED on PB2 (pin 7) now, since it will be done in the hold loop
+    blueTemp = Blue; // no need to manually pulse Green LED on PB2 (pin 7) now, since it will be done in the hold loop
     OCR1A = Red;       // update PWM for Red LED on OC1A (pin 6)
-    OCR1B = Blue;      // update PWM for Blue LED on OC1B (pin 3)
+    OCR1B = Green;      // update PWM for Green LED on OC1B (pin 3)
   }
 
   // fade loop
@@ -718,19 +709,19 @@ void sendrgbElement( int index ) {
       blueTemp = blueTemp + blueInc;              // increment to next blue value
       blueTime = blueTime + blueTimeInc;          // we'll increment Blue value again when FadeTime reaches new blueTime
     }
-    pulseGreen(greenTemp); // one manual PWM pulse on the Green LED on PB2 (pin 7) for a period of 400 microseconds
+    pulseBlue(blueTemp); // one manual PWM pulse on the Green LED on PB2 (pin 7) for a period of 400 microseconds
     OCR1A = redTemp;       // update PWM for Red LED on OC1A (pin 6)
-    OCR1B = blueTemp;      // update PWM for Blue LED on OC1B (pin 3)
+    OCR1B = greenTemp;      // update PWM for Blue LED on OC1B (pin 3)
     pulseIR();             // pulse the IR emitter for a little bit (if there's a reflection to the IR detector as a result, then the ISR will set Start_Over = 1)
     if ( Start_Over ) return;  // if the IR detector saw IR, then we should reset and start over (Start_Over gets set to 1 in the interrupt routine if the IR detector saw IR)
   }
   OCR1A = Red;    // leave Timer1 PWM at final brightness value for Red (in case there were rounding errors in above math)
-  OCR1B = Blue;   // leave Timer1 PWM at final brightness value for Blue (in case there were rounding errors in above math)
+  OCR1B = Green;   // leave Timer1 PWM at final brightness value for Blue (in case there were rounding errors in above math)
 
   // hold loop
   //   hold all LEDs at current values for HoldTime
   for (int holdCounter=0; holdCounter<HoldTime; holdCounter++) {
-    pulseGreen(greenTemp); // one manual PWM pulse on the Green LED on PB2 (pin 7) for a period of 400 microseconds
+    pulseBlue(blueTemp); // one manual PWM pulse on the Green LED on PB2 (pin 7) for a period of 400 microseconds
                            // the Red LED will continue to pulse automatically from the hardware Timer1
                            // the Blue LED will continue to pulse automatically from the hardware Timer1
     pulseIR();             // pulse the IR emitter for a little bit (if there's a reflection to the IR detector as a result, then the ISR will set Start_Over = 1)
@@ -812,7 +803,7 @@ int main(void) {
   OCR1B = 0;  // start with minimum brightness for Blue LED on OC1B (PB4, pin 3)
 
   // Since we are only using hardware timers to drive the Red and Blue LEDs with PWM
-  //   we will pulse the Green LED manually with the firmware (using the pulseGreen() function, which is called by the sendrgbElement() function)
+  //   we will pulse the Green LED manually with the firmware (using the pulseBlue() function, which is called by the sendrgbElement() function)
 
   // This loop goes through the lightTab, displaying each rgbElement in the table
   //   the loop knows that the last rgbElement has been displayed
