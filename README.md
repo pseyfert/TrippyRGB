@@ -12,3 +12,16 @@ take the original :)
 Writeup on what I did to follow … some day … maybe … if I have time … and
 nothing better to do … and am in the mood for it.
 
+# requirements
+
+## hardware
+
+ * USBtinyISP
+ * TrippyRGB (w/ battery)
+ * USB A cable
+
+## software
+
+ * avrdude
+ * make
+ * (possibly more?)
